@@ -12,7 +12,8 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 ### Load the packages that will be used.
 
-```{r}
+
+```r
 library(knitr)
 require(plyr)
 require(ggplot2)
@@ -21,7 +22,8 @@ require(hash)
 
 ### Loading and preprocessing the data
 
-```{r}
+
+```r
 dat<-read.csv("repdata-data-activity/activity.csv")
 dat$date<-strptime(dat$date,"%Y-%m-%d") # convert character to date
 dat$fivemin<-dat$interval%%100+60*dat$interval%/%100 # make equally-spaced time labels
@@ -33,23 +35,39 @@ dat$fivemin<-dat$interval%%100+60*dat$interval%/%100 # make equally-spaced time 
 
 Ignore missing values, dropping days with all values missing.
 
-```{r}
+
+```r
 dat_complete<-dat[!is.na(dat$steps),]
 dat_by_day<-ddply(dat_complete,.(date),summarize,stepsum=sum(steps))
 ```
 
 #### Make a histogram.
 
-```{r}
+
+```r
 qplot(stepsum,data=dat_by_day)+labs(title="Histogram of Daily Step Totals",
   x="total steps")
 ```
 
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4-1.png) 
+
 #### Calculate and report the mean and median of the total number of steps taken per day.
 
-```{r}
+
+```r
 mean(dat_by_day$stepsum)
+```
+
+```
+## [1] 10766.19
+```
+
+```r
 median(dat_by_day$stepsum)
+```
+
+```
+## [1] 10765
 ```
 
 ### What is the average daily activity pattern?
@@ -58,20 +76,28 @@ median(dat_by_day$stepsum)
 
 To arrange for the intervals to be appropriately spaced, use the fivemin variable, which gives the starting minute of the interval.
 
-```{r}
+
+```r
 dat_by_minute<-ddply(dat_complete,.(fivemin),summarize,steps=mean(steps))
 qplot(fivemin,steps,data=dat_by_minute,geom="line")+
   labs(title="Daily Activity Pattern",x="minutes into day")
 ```
 
+![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6-1.png) 
+
 #### Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
 max_interval gives the interval with the maximum mean number of steps.
 
-```{r}
+
+```r
 max_index<-which(dat_by_minute$steps==max(dat_by_minute$steps))
 max_fivemin<-dat_by_minute$fivemin[max_index]
 max_interval<-dat$interval[which(dat$fivemin==max_fivemin)][1]
 max_interval
+```
+
+```
+## [1] 835
 ```
 
 
@@ -79,8 +105,13 @@ max_interval
 
 #### Calculate and report the total number of missing values in the data
 
-```{r}
+
+```r
 sum(!complete.cases(dat[,c(1,3)]))
+```
+
+```
+## [1] 2304
 ```
 
 #### Devise a strategy for filling in all of the missing values in the dataset. 
@@ -89,7 +120,8 @@ Here, we will use the median of the non-missing values for that interval to repl
 
 #### Create a new dataset that is equal to the original dataset but with the missing data filled in.
 
-```{r}
+
+```r
 dat_interval<-dat_complete
 dat_interval<-ddply(dat_interval,.(interval),summarize,
   stepmedian=median(steps))
@@ -103,16 +135,33 @@ dat_impute$steps[bad]<-
 
 #### Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day.
 
-```{r}
+
+```r
 dat_i_by_day<-ddply(dat_impute,.(date),summarize,stepsum=sum(steps))
  ## make a histogram
 qplot(stepsum,data=dat_i_by_day)+
   labs(title="Histogram of Daily Step Totals, with Imputation",
 	x="total steps")
+```
+
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10-1.png) 
+
+```r
  ## Calculate and report the mean and median of the total number of steps 
  ## taken per day
 mean(dat_i_by_day$stepsum)
+```
+
+```
+## [1] 9503.869
+```
+
+```r
 median(dat_i_by_day$stepsum)
+```
+
+```
+## [1] 10395
 ```
 
 #### Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
@@ -124,7 +173,8 @@ These values are different. We see an increase in low numbers of steps.
 
 #### Create a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
 
-```{r}
+
+```r
 dat_impute$type<-"weekday"
 weekend<-weekdays(dat_impute$date) %in% c("Saturday","Sunday")
 dat_impute$type[weekend]<-"weekend"
@@ -134,9 +184,12 @@ dat_impute$type[weekend]<-"weekend"
 
 
 
-```{r}
+
+```r
 dat_i_by_minute<-ddply(dat_impute,.(fivemin,type),summarize,steps=mean(steps))
 qplot(fivemin,steps,data=dat_i_by_minute,facets=type~.,geom="line")+
   labs(title="Daily Activity Pattern\nWeekday and Weekend",x="minutes into day")
 ```
+
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12-1.png) 
 
